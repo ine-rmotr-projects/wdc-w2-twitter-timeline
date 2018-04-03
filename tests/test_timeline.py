@@ -1,146 +1,146 @@
+import pytest
 from datetime import datetime
 
-from django.contrib.auth import get_user_model
-from django_webtest import WebTest
-
 from twitter.models import Tweet
+from base import base_twitter_fixture, base_authenticated_fixture
 
-User = get_user_model()
 
+def test_timeline(base_twitter_fixture, django_app):
+    """Should list tweets from both authenticated user and users that he is following"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
+    larry = base_twitter_fixture['larry']
 
-class TweetTimelineTestCase(WebTest):
-    def setUp(self):
-        # Wiping out initial data created by migrations
-        Tweet.objects.all().delete()
-        User.objects.all().delete()
+    # Preconditions
+    jack.follow(ev)
+    jack.follow(larry)
+    Tweet.objects.create(user=jack, content='Tweet Jack 1')
+    Tweet.objects.create(user=ev, content='Tweet Evan 1')
+    Tweet.objects.create(user=larry, content='Tweet Larry 1')
+    assert Tweet.objects.count() == 3
 
-        self.jack = User.objects.create_user(
-            username='jack', email='jack@twitter.com', password='coffee')
-        self.ev = User.objects.create_user(
-            username='evan', email='ev@twitter.com', password='coffee')
-        self.larry = User.objects.create_user(
-            username='larry', email='larry@twitter.com', password='coffee')
+    # first user timeline
+    resp = django_app.get('/', user=jack)
+    feed = resp.html.find('div', class_='tweet-feed')
+    tweets = feed.find_all('div', class_='tweet-container')
+    tweet_contents = [tweet.find('div', class_='tweet-content').text
+                      for tweet in tweets]
+    assert resp.status_code == 200
+    assert len(tweets) == 3
+    assert 'Tweet Jack 1' in tweet_contents
+    assert 'Tweet Evan 1' in tweet_contents
+    assert 'Tweet Larry 1' in tweet_contents
 
-    def test_timeline(self):
-        """Should list tweets from both authenticated user and users that he is following"""
-        # Preconditions
-        self.jack.follow(self.ev)
-        self.jack.follow(self.larry)
-        Tweet.objects.create(user=self.jack, content='Tweet Jack 1')
-        Tweet.objects.create(user=self.ev, content='Tweet Evan 1')
-        Tweet.objects.create(user=self.larry, content='Tweet Larry 1')
-        self.assertEqual(Tweet.objects.count(), 3)
+    # second user timeline
+    resp = django_app.get('/', user=ev)
+    feed = resp.html.find('div', class_='tweet-feed')
+    tweets = feed.find_all('div', class_='tweet-container')
+    tweet_contents = [tweet.find('div', class_='tweet-content').text
+                      for tweet in tweets]
+    assert resp.status_code == 200
+    assert len(tweets) == 1
+    assert 'Tweet Evan 1' in tweet_contents
 
-        # first user timeline
-        resp = self.app.get('/', user=self.jack)
-        feed = resp.html.find('div', class_='tweet-feed')
-        tweets = feed.find_all('div', class_='tweet-container')
-        tweet_contents = [tweet.find('div', class_='tweet-content').text
-                          for tweet in tweets]
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(tweets), 3)
-        self.assertTrue('Tweet Jack 1' in tweet_contents)
-        self.assertTrue('Tweet Evan 1' in tweet_contents)
-        self.assertTrue('Tweet Larry 1' in tweet_contents)
+    assert 'Tweet Jack 1' not in tweet_contents
+    assert 'Tweet Larry 1' not in tweet_contents
 
-        # second user timeline
-        resp = self.app.get('/', user=self.ev)
-        feed = resp.html.find('div', class_='tweet-feed')
-        tweets = feed.find_all('div', class_='tweet-container')
-        tweet_contents = [tweet.find('div', class_='tweet-content').text
-                          for tweet in tweets]
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(len(tweets), 1)
-        self.assertTrue('Tweet Evan 1' in tweet_contents)
+def test_timeline_tweets_ordering(base_twitter_fixture, django_app):
+    """Should list tweets in timeline ordered by creation datetime"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
 
-        self.assertFalse('Tweet Jack 1' in tweet_contents)
-        self.assertFalse('Tweet Larry 1' in tweet_contents)
+    jack.follow(ev)
+    tw1 = Tweet.objects.create(user=jack, content='Tweet Jack 1')
+    tw1.created = datetime(2015, 6, 22, 21, 55, 10)
+    tw1.save()
 
-    def test_timeline_tweets_ordering(self):
-        """Should list tweets in timeline ordered by creation datetime"""
-        self.jack.follow(self.ev)
-        tw1 = Tweet.objects.create(user=self.jack, content='Tweet Jack 1')
-        tw1.created = datetime(2015, 6, 22, 21, 55, 10)
-        tw1.save()
+    tw2 = Tweet.objects.create(user=ev, content='Tweet Evan 1')
+    tw2.created = datetime(2014, 6, 22, 21, 55, 10)
+    tw2.save()
 
-        tw2 = Tweet.objects.create(user=self.ev, content='Tweet Evan 1')
-        tw2.created = datetime(2014, 6, 22, 21, 55, 10)
-        tw2.save()
+    tw3 = Tweet.objects.create(user=jack, content='Tweet Jack 2')
+    tw3.created = datetime(2016, 6, 22, 21, 55, 10)
+    tw3.save()
 
-        tw3 = Tweet.objects.create(user=self.jack, content='Tweet Jack 2')
-        tw3.created = datetime(2016, 6, 22, 21, 55, 10)
-        tw3.save()
+    resp = django_app.get('/', user=jack)
+    feed = resp.html.find('div', class_='tweet-feed')
+    tweets = feed.find_all('div', class_='tweet-container')
+    assert '06/22/2016 9:55 p.m.' in tweets[0].find('span', class_='created-datetime').text
+    assert '06/22/2015 9:55 p.m.' in tweets[1].find('span', class_='created-datetime').text
+    assert '06/22/2014 9:55 p.m.' in tweets[2].find('span', class_='created-datetime').text
 
-        resp = self.app.get('/', user=self.jack)
-        feed = resp.html.find('div', class_='tweet-feed')
-        tweets = feed.find_all('div', class_='tweet-container')
-        self.assertTrue('06/22/2016 9:55 p.m.' in
-                        tweets[0].find('span', class_='created-datetime').text)
-        self.assertTrue('06/22/2015 9:55 p.m.' in
-                        tweets[1].find('span', class_='created-datetime').text)
-        self.assertTrue('06/22/2014 9:55 p.m.' in
-                        tweets[2].find('span', class_='created-datetime').text)
+def test_timeline_follow_button(base_twitter_fixture, django_app):
+    """Should show follow button when authenticated user is not following current twitter profile"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
 
-    def test_timeline_follow_button(self):
-        """Should show follow button when authenticated user is not following current twitter profile"""
-        # Preconditions
-        resp = self.app.get('/evan', user=self.jack)
-        button = resp.html.find('div', class_='relationship-button')
-        self.assertTrue('Follow' in button.text)
+    # Preconditions
+    resp = django_app.get('/evan', user=jack)
+    button = resp.html.find('div', class_='relationship-button')
+    assert 'Follow' in button.text
 
-        self.jack.follow(self.ev)
+    jack.follow(ev)
 
-        # Postconditions
-        resp = self.app.get('/evan', user=self.jack)
-        button = resp.html.find('div', class_='relationship-button')
-        self.assertFalse('Follow' in button.text)
+    # Postconditions
+    resp = django_app.get('/evan', user=jack)
+    button = resp.html.find('div', class_='relationship-button')
+    assert 'Follow' not in button.text
 
-    def test_timeline_follow_user(self):
-        """Should create a Relationship between authenticated user and given twitter profile"""
-        # Preconditions
-        self.assertEqual(self.jack.count_following, 0)
-        self.assertEqual(self.ev.count_followers, 0)
-        self.assertFalse(self.jack.is_following(self.ev))
+def test_timeline_follow_user(base_twitter_fixture, django_app):
+    """Should create a Relationship between authenticated user and given twitter profile"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
 
-        resp = self.app.get('/evan', user=self.jack)
-        form = resp.forms['follow-{}'.format(self.ev.username)]
-        follow_user = form.submit()
+    # Preconditions
+    assert jack.count_following == 0
+    assert ev.count_followers == 0
+    assert jack.is_following(ev) == False
 
-        # Postconditions
-        self.assertEqual(follow_user.status_code, 302)
-        self.assertEqual(self.jack.count_following, 1)
-        self.assertEqual(self.ev.count_followers, 1)
-        self.assertTrue(self.jack.is_following(self.ev))
+    resp = django_app.get('/evan', user=jack)
+    form = resp.forms['follow-{}'.format(ev.username)]
+    follow_user = form.submit()
 
-    def test_timeline_unfollow_button(self):
-        """Should show unfollow button when authenticated user is following current twitter profile"""
-        # Preconditions
-        self.jack.follow(self.ev)
-        resp = self.app.get('/evan', user=self.jack)
-        button = resp.html.find('div', class_='relationship-button')
-        self.assertTrue('Unfollow' in button.text)
+    # Postconditions
+    assert follow_user.status_code == 302
+    assert jack.count_following == 1
+    assert ev.count_followers == 1
+    assert jack.is_following(ev)
 
-        self.jack.unfollow(self.ev)
+def test_timeline_unfollow_button(base_twitter_fixture, django_app):
+    """Should show unfollow button when authenticated user is following current twitter profile"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
 
-        # Postconditions
-        resp = self.app.get('/evan', user=self.jack)
-        button = resp.html.find('div', class_='relationship-button')
-        self.assertFalse('Unfollow' in button.text)
+    # Preconditions
+    jack.follow(ev)
+    resp = django_app.get('/evan', user=jack)
+    button = resp.html.find('div', class_='relationship-button')
+    assert 'Unfollow' in button.text
 
-    def test_timeline_unfollow_user(self):
-        """Should delete a Relationship between authenticated user and given twitter profile"""
-        # Preconditions
-        self.jack.follow(self.ev)
-        self.assertEqual(self.jack.count_following, 1)
-        self.assertEqual(self.ev.count_followers, 1)
-        self.assertTrue(self.jack.is_following(self.ev))
+    jack.unfollow(ev)
 
-        resp = self.app.get('/evan', user=self.jack)
-        form = resp.forms['unfollow-{}'.format(self.ev.username)]
-        follow_user = form.submit()
+    # Postconditions
+    resp = django_app.get('/evan', user=jack)
+    button = resp.html.find('div', class_='relationship-button')
+    assert 'Unfollow' not in button.text
 
-        # Postconditions
-        self.assertEqual(follow_user.status_code, 302)
-        self.assertEqual(self.jack.count_following, 0)
-        self.assertEqual(self.ev.count_followers, 0)
-        self.assertFalse(self.jack.is_following(self.ev))
+def test_timeline_unfollow_user(base_twitter_fixture, django_app):
+    """Should delete a Relationship between authenticated user and given twitter profile"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
+
+    # Preconditions
+    jack.follow(ev)
+    assert jack.count_following == 1
+    assert ev.count_followers == 1
+    assert jack.is_following(ev)
+
+    resp = django_app.get('/evan', user=jack)
+    form = resp.forms['unfollow-{}'.format(ev.username)]
+    follow_user = form.submit()
+
+    # Postconditions
+    assert follow_user.status_code == 302
+    assert jack.count_following == 0
+    assert ev.count_followers == 0
+    assert jack.is_following(ev) == False
