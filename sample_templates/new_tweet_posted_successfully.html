@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Twitter clone</title>
+
+    <!-- styles -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+</head>
+
+<body>
+    <div class="container body-container">
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Twitter clone</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+
+                        <li><a href="/logout"><i class="fa fa-sign-out" aria-hidden="true"></i> Log out</a></li>
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+
+        <div class="row">
+            <div class="col-sm-12 messages">
+
+                <div class="alert  alert-success" role="alert">
+                    Tweet Created!
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="row">
+
+            <div class="col-sm-2"></div>
+            <div class="col-sm-8">
+
+                <div class="row">
+                    <form role="form" class='tweet-form' action="" method="POST">
+                        <input type='hidden' name='csrfmiddlewaretoken' value='EWLMomFcnNj2hpWbcxx2M4Puhk3YztiH' />
+                        <div class="form-group ">
+                            <textarea class="form-control" name="content" placeholder="Write your tweet here..." required></textarea>
+
+
+                        </div>
+                        <button type="submit" class="btn btn-info pull-right">Submit</button>
+                    </form>
+                </div>
+
+                <div class="row tweet-feed">
+
+                    <div class="well well-large tweet-container">
+
+                        <form id='delete-tweet-form-10' action="/tweet/10/delete?next=/" method="POST">
+                            <input type='hidden' name='csrfmiddlewaretoken' value='EWLMomFcnNj2hpWbcxx2M4Puhk3YztiH' />
+                            <button type="submit" class="close" title="Delete this tweet"><span aria-hidden="true">&times;</span></button>
+                        </form>
+
+                        <div>
+                            <strong>@santiagobasulto</strong>
+                            <span class="label label-primary">Aug. 23, 2016, 3:18 p.m.</span>
+                        </div>
+                        <div class='tweet-content'>This tweet works</div>
+                    </div>
+
+                    <div class="well well-large tweet-container">
+
+                        <form id='delete-tweet-form-9' action="/tweet/9/delete?next=/" method="POST">
+                            <input type='hidden' name='csrfmiddlewaretoken' value='EWLMomFcnNj2hpWbcxx2M4Puhk3YztiH' />
+                            <button type="submit" class="close" title="Delete this tweet"><span aria-hidden="true">&times;</span></button>
+                        </form>
+
+                        <div>
+                            <strong>@santiagobasulto</strong>
+                            <span class="label label-primary">Aug. 23, 2016, 3:15 p.m.</span>
+                        </div>
+                        <div class='tweet-content'>Second tweet!</div>
+                    </div>
+
+                    <div class="well well-large tweet-container">
+
+                        <form id='delete-tweet-form-8' action="/tweet/8/delete?next=/" method="POST">
+                            <input type='hidden' name='csrfmiddlewaretoken' value='EWLMomFcnNj2hpWbcxx2M4Puhk3YztiH' />
+                            <button type="submit" class="close" title="Delete this tweet"><span aria-hidden="true">&times;</span></button>
+                        </form>
+
+                        <div>
+                            <strong>@santiagobasulto</strong>
+                            <span class="label label-primary">Aug. 23, 2016, 3:15 p.m.</span>
+                        </div>
+                        <div class='tweet-content'>My first tweet!</div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-sm-2"></div>
+        </div>
+
+    </div>
+</body>
+
+<!-- scripts -->
+<script src="https://code.jquery.com/jquery-2.2.4.min.js" type="text/javascript" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" type="text/javascript"></script>
+
+</html>

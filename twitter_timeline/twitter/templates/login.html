@@ -1,0 +1,31 @@
+{% extends 'base.html'%}
+
+{% block content %}
+
+{% if form.errors %}
+{% for error in form.non_field_errors %}
+  <div class="alert alert-danger" role="alert">{{error}}</div>
+{% endfor %}
+{% for field in form %}
+    {% for error in field.errors %}
+        <div class="alert alert-danger" role="alert">{{field.label}}: {{error}}</div>
+    {% endfor %}
+{% endfor %}
+{% endif %}
+
+
+<div class="col-md-12">
+    <form role="form" action="" method="POST">
+      {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input class="form-control" name="username" placeholder="Your username" value="{{form.username.value|default_if_none:''}}">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" name="password" placeholder="Your password">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+</div>
+{% endblock %}
