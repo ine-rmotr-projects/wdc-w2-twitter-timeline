@@ -7,6 +7,7 @@ from twitter.models import Tweet, User
 from base import base_twitter_fixture, base_authenticated_fixture
 
 
+@pytest.mark.django_db(transaction=False)
 def test_tweets_are_migrated():
     assert Tweet.objects.count() == 2
     jack = User.objects.get(username='jack')
