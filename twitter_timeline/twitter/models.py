@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from django.dispatch import receiver
 from django.contrib.auth.models import AbstractUser
+from django.db.models.signals import post_save, post_delete
 from model_utils.models import TimeStampedModel
-
 
 
 class Tweet(TimeStampedModel):
@@ -11,20 +12,8 @@ class Tweet(TimeStampedModel):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
-    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='like')
+    likes_count = models.IntegerField(default=0)
     content = models.CharField(max_length=140, blank=True)
-
-    @property
-    def count_likes(self):
-        return self.likes.count()
-
-    @property
-    def add_like_from_user(self, user):
-        self.likes.add(user)
-
-    @property
-    def remove_like_from_user(self, user):
-        self.likes.remove(user)
 
 
 class Relationship(models.Model):
@@ -81,3 +70,21 @@ class User(AbstractUser):
     @property
     def count_followers(self):
         return Relationship.objects.filter(following=self).count()
+
+
+class Like(TimeStampedModel):
+    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender=Like)
+def add_like_to_tweet(sender, instance, created, **kwargs):
+    tweet = instance.tweet
+    tweet.likes_count += 1
+    tweet.save()
+
+@receiver(post_delete, sender=Like)
+def remove_like_from_tweet(sender, instance, **kwargs):
+    tweet = instance.tweet
+    tweet.likes_count -= 1
+    tweet.save()

@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
 
-from twitter.models import Tweet
+from twitter.models import Tweet, Like
 from base import base_twitter_fixture, base_authenticated_fixture
 
 
@@ -144,3 +144,25 @@ def test_timeline_unfollow_user(base_twitter_fixture, django_app):
     assert jack.count_following == 0
     assert ev.count_followers == 0
     assert jack.is_following(ev) == False
+
+def test_like_tweet_signals(base_twitter_fixture, django_app):
+    """Should increment/decrease Tweet's likes_count when Like object is created/removed for that tweet"""
+    jack = base_twitter_fixture['jack']
+    ev = base_twitter_fixture['ev']
+
+    # Preconditions
+    tw = Tweet.objects.create(user=jack, content='Tweet Jack 1')
+    assert Tweet.objects.count() == 1
+    assert tw.likes_count == 0
+    assert Like.objects.count() == 0
+
+    like = Like.objects.create(user=ev, tweet=tw)
+
+    # Postconditions
+    assert Like.objects.count() == 1
+    tw = Tweet.objects.get(user=jack)
+    assert tw.likes_count == 1
+
+    like.delete()
+    tw = Tweet.objects.get(user=jack)
+    assert tw.likes_count == 0

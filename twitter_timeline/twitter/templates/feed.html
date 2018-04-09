@@ -63,6 +63,10 @@
               <span class="label label-primary created-datetime">{{tweet.created|date:"SHORT_DATETIME_FORMAT"}}</span>
           </div>
           <div class='tweet-content'>{{ tweet.content }}</div>
+          <div class='like-button'>
+            <i data-tweet-id="{{tweet.id}}" class="fa {% if tweet.is_liked_by_user %}fa-heart{% else %}fa-heart-o{% endif %} tweet-like"></i>
+            <span id="tweet-{{tweet.id}}-like-count">{{tweet.likes_count}}</span>
+          </div>
       </div>
       {% empty %}
         <p><strong>@{{twitter_profile.username}}</strong> hasn't tweeted yet :(</p>

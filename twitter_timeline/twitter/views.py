@@ -1,16 +1,16 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseForbidden
-from django.http.response import HttpResponseNotFound
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth import logout as django_logout, get_user_model
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.contrib import messages
-from django.conf import settings
 from django.db.models import Q
+from django.conf import settings
+from django.contrib import messages
+from django.http import HttpResponseForbidden, HttpResponse
+from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST
+from django.http.response import HttpResponseNotFound
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import logout as django_logout, get_user_model
 
-from .models import Tweet, Relationship, User
 from .forms import TweetForm
+from .models import Tweet, Relationship, User, Like
 
 
 @login_required()
@@ -44,6 +44,14 @@ def home(request, username=None):
             form = None
     users_following = request.user.following
     tweets = Tweet.objects.filter(Q(user=user) | Q(user__in=users_following))
+    liked_tweets = [like.tweet for like in Like.objects.filter(user=user)]
+
+    for tweet in tweets:
+        if tweet in liked_tweets:
+            tweet.is_liked_by_user = True
+        else:
+            tweet.is_liked_by_user = False
+
     following_profile = request.user.is_following(user)
     return render(request, 'feed.html', {
         'form': form,
@@ -79,3 +87,15 @@ def delete_tweet(request, tweet_id):
     tweet.delete()
     messages.success(request, 'Tweet successfully deleted')
     return redirect(request.GET.get('next', '/'))
+
+
+@login_required()
+def like_tweet(request, tweet_id):
+    tweet = get_object_or_404(Tweet, pk=tweet_id)
+    try:
+        like = Like.objects.get(user=request.user, tweet=tweet)
+    except Like.DoesNotExist:
+        Like.objects.create(user=request.user, tweet=tweet)
+    else:
+        like.delete()
+    return HttpResponse('')

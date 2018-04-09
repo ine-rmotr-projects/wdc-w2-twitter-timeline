@@ -62,4 +62,37 @@
   crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
   type="text/javascript"></script>
+
+<script type="text/javascript">
+  $(".tweet-like").click(function(){
+    var tweetId = $(this).data("tweet-id")
+
+    if ($(this).hasClass("fa-heart-o")) {
+      // Tweet not liked by authenticated user
+      $(this).removeClass("fa-heart-o");
+      $(this).addClass("fa-heart");
+
+      $("#tweet-" + tweetId + "-like-count").replaceWith(function() {
+          var updatedCounter = parseInt($("#tweet-" + tweetId + "-like-count").html()) + 1
+          return "<span id='tweet-" + tweetId + "-like-count'>" + updatedCounter + "</span>"
+        }
+      )
+
+    } else {
+      // Tweet already liked by authenticated user
+      $(this).removeClass("fa-heart");
+      $(this).addClass("fa-heart-o");
+
+      $("#tweet-" + tweetId + "-like-count").replaceWith(function() {
+          var updatedCounter = parseInt($("#tweet-" + tweetId + "-like-count").html()) - 1
+          return "<span id='tweet-" + tweetId + "-like-count'>" + updatedCounter + "</span>"
+        }
+      )
+    }
+
+    // perform POST request to create/delete Like object from DB
+    var data = {csrfmiddlewaretoken: document.getElementsByName('csrfmiddlewaretoken')[0].value}
+    $.post("/tweet/" + tweetId + "/like", data, function(){});
+  });
+</script>
 </html>
