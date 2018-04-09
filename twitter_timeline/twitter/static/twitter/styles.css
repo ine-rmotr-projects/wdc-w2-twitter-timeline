@@ -4,3 +4,11 @@ div.body-container {
 div.row {
   margin-bottom: 15px;
 }
+
+i.tweet-like {
+  cursor: pointer;
+}
+
+div.like-button {
+  margin-top: 10px;
+}

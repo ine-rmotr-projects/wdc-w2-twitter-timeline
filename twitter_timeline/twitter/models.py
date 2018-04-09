@@ -1,10 +1,41 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 
 class Tweet(models.Model):
-    # {
-    #     "username": "jack",
-    #     "content": "hello world!",
-    #     "created": "2016-08-26T10:03:28"
-    # }
-    tweet_info_json = models.CharField(max_length=1500)
+    pass
+
+
+class Relationship(models.Model):
+    pass
+
+
+class User(AbstractUser):
+
+    def follow(self, user):
+        pass
+
+    def unfollow(self, user):
+        pass
+
+    def is_following(self, user):
+        pass
+
+    @property
+    def following(self):
+        pass
+
+    @property
+    def followers(self):
+        pass
+
+    @property
+    def count_following(self):
+        pass
+
+    @property
+    def count_followers(self):
+        pass
+
+class Like(models.Model):
+    pass

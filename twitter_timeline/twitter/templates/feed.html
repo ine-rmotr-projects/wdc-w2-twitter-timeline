@@ -1,0 +1,68 @@
+{% extends 'base.html'%}
+
+{% block content %}
+<div class="col-sm-2"></div>
+<div class="col-sm-8">
+  {% if request.user == twitter_profile %}
+    <div class="row">
+        <form role="form" class='tweet-form' action="" method="POST">
+          {% csrf_token %}
+            <div class="form-group {{form.errors|yesno:"has-error,,"}}">
+                <textarea class="form-control" name="content" placeholder="Write your tweet here..." required>{% spaceless %}
+                  {% if form.content.value %}
+                    {{ form.content.value }}
+                  {% endif %}
+                {% endspaceless %}</textarea>
+                {% if form.content.errors %}
+                  {% for error in form.content.errors %}
+                    <span class="help-block">{{error}}</span>
+                  {% endfor %}
+                {% endif %}
+
+            </div>
+            <button type="submit" class="btn btn-info pull-right">Submit</button>
+        </form>
+    </div>
+  {% endif %}
+
+  {% if request.path != '/' %}
+  <div class="row">
+    <h2>Browsing <strong>@{{twitter_profile}}</strong</h2>
+  </div>
+  {% endif %}
+
+  <div class="row relationship-button">
+    {% if request.user != twitter_profile %}
+      <form id="follow-{{twitter_profile}}" role="form" class='tweet-form' action="/follow?next={{request.path}}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="username" value="{{twitter_profile}}"/>
+        <button type="submit" class="btn btn-info pull-right">Follow</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="row tweet-feed">
+      {% for tweet in tweets %}
+      <div class="well well-large tweet-container">
+          {% if twitter_profile == request.user %}
+          <form id='delete-tweet-form-{{tweet.id}}' action="/tweet/{{tweet.id}}/delete?next={{request.path}}" method="POST">
+              {% csrf_token %}
+              <button type="submit" class="close" title="Delete this tweet"><span aria-hidden="true">&times;</span></button>
+          </form>
+          {% endif %}
+          <div>
+              <strong>@{{tweet.user.username}}</strong>
+              <span class="label label-primary">{{tweet.created}}</span>
+          </div>
+          <div class='tweet-content'>{{ tweet.content }}</div>
+          <div class='like-button'>
+            <i data-tweet-id="{{tweet.id}}" class="fa {% if tweet.is_liked_by_user %}fa-heart{% else %}fa-heart-o{% endif %} tweet-like"></i>
+            <span id="tweet-{{tweet.id}}-like-count">{{tweet.likes_count}}</span>
+          </div>
+      </div>
+      {% empty %}
+        <p><strong>@{{twitter_profile.username}}</strong> hasn't tweeted yet :(</p>
+      {% endfor %}
+  </div>
+</div>
+<div class="col-sm-2"></div>{% endblock %}
